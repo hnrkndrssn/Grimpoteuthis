@@ -1,0 +1,8 @@
+﻿<mobile:AutoSuspendApplication
+    x:Class="Grimpoteuthis.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mobile="using:ReactiveUI.Mobile"
+    xmlns:local="using:Grimpoteuthis">
+
+</mobile:AutoSuspendApplication>
