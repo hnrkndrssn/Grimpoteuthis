@@ -35,6 +35,10 @@ namespace Grimpoteuthis.Views
             this.Bind(ViewModel, x => x.ErrorMessage, x => x.ErrorMessage.Text);
 
             this.BindCommand(ViewModel, x => x.LoginCommand, x => x.LoginButton);
+
+            this.Bind(ViewModel, x => x.OneTimePassword, x => x.OneTimePassword.Text);
+            this.OneWayBind(ViewModel, x => x.RequireOneTimePassword, x => x.OneTimePasswordDetails.Visibility);
+            this.BindCommand(ViewModel, x => x.TwoFactorCommand, x => x.TwoFactorButton);
         }
     }
 }

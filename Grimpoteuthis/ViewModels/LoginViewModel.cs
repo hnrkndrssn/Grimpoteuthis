@@ -33,7 +33,22 @@ namespace Grimpoteuthis.ViewModels
             set { this.RaiseAndSetIfChanged(ref _Password, value); }
         }
 
+        bool _RequireOneTimePassword;
+        public bool RequireOneTimePassword
+        {
+            get { return _RequireOneTimePassword; }
+            set { this.RaiseAndSetIfChanged(ref _RequireOneTimePassword, value); }
+        }
+
+        string _OneTimePassword = String.Empty;
+        public string OneTimePassword
+        {
+            get { return _OneTimePassword; }
+            set { this.RaiseAndSetIfChanged(ref _OneTimePassword, value); }
+        }
+
         public ReactiveCommand LoginCommand { get; protected set; }
+        public ReactiveCommand TwoFactorCommand { get; protected set; }
 
         public LoginViewModel(IScreen screen = null)
         {
@@ -48,6 +63,13 @@ namespace Grimpoteuthis.ViewModels
             LoginCommand.RegisterAsyncTask(async _ =>
             {
                 await Login();
+            });
+
+            var canAuthenticateWithOTP = this.WhenAny(x => x.OneTimePassword, (otp) => !String.IsNullOrWhiteSpace(otp.Value));
+            TwoFactorCommand = new ReactiveCommand(canAuthenticateWithOTP);
+            TwoFactorCommand.RegisterAsyncTask(async _ =>
+            {
+                await AuthenticateWithOTP();
             });
 
         }
@@ -71,6 +93,45 @@ namespace Grimpoteuthis.ViewModels
 
                 _Client.Connection.Credentials = new Credentials(authorization.Token);
                 RxApp.MutableResolver.Register(() => _Client, typeof(IGitHubClient));
+
+                Username = String.Empty;
+                Password = String.Empty;
+                ErrorMessage = "Successfully authenticated with username password";
+            }
+            catch (TwoFactorRequiredException tfrex)
+            {
+                ErrorMessage = tfrex.Message;
+                RequireOneTimePassword = true;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = ex.Message;
+            }
+        }
+
+        private async Task AuthenticateWithOTP()
+        {
+            var newAuthorization = new NewAuthorization
+            {
+                Scopes = new List<string> { "user", "repo", "delete_repo", "notifications", "gist" },
+                Note = "Grimpoteuthis"
+            };
+
+            try
+            {
+                var authorization = await _Client.Authorization.GetOrCreateApplicationAuthentication(
+                    "client-id-of-your-registered-github-application",
+                    "client-secret-of-your-registered-github-application",
+                    newAuthorization,
+                    OneTimePassword);
+
+                _Client.Connection.Credentials = new Credentials(authorization.Token);
+                RxApp.MutableResolver.Register(() => _Client, typeof(IGitHubClient));
+
+                Username = String.Empty;
+                Password = String.Empty;
+                OneTimePassword = String.Empty;
+                ErrorMessage = "Successfully authenticated with One Time Password";
             }
             catch (Exception ex)
             {
