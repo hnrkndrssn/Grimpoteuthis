@@ -12,6 +12,13 @@ namespace Grimpoteuthis.ViewModels
         public string UrlPathSegment { get { return "Login"; } }
         public IScreen HostScreen { get; private set; }
 
+        string _ErrorMessage = String.Empty;
+        public string ErrorMessage
+        {
+            get { return _ErrorMessage; }
+            set { this.RaiseAndSetIfChanged(ref _ErrorMessage, value); }
+        }
+
         string _Username = String.Empty;
         public string Username
         {
@@ -55,13 +62,20 @@ namespace Grimpoteuthis.ViewModels
                 Note = "Grimpoteuthis"
             };
 
-            var authorization = await _Client.Authorization.GetOrCreateApplicationAuthentication(
-                "client-id-of-your-registered-github-application",
-                "client-secret-of-your-registered-github-application",
-                newAuthorization);
+            try
+            {
+                var authorization = await _Client.Authorization.GetOrCreateApplicationAuthentication(
+                    "client-id-of-your-registered-github-application",
+                    "client-secret-of-your-registered-github-application",
+                    newAuthorization);
 
-            _Client.Connection.Credentials = new Credentials(authorization.Token);
-            RxApp.MutableResolver.Register(() => _Client, typeof(IGitHubClient));
+                _Client.Connection.Credentials = new Credentials(authorization.Token);
+                RxApp.MutableResolver.Register(() => _Client, typeof(IGitHubClient));
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = ex.Message;
+            }
         }
 
     }
